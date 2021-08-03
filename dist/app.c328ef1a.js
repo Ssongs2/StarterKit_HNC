@@ -123,6 +123,10 @@ var ajax = new XMLHttpRequest(); //상수
 
 var NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 var CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
+var store = {
+  currentPage: 1,
+  totalPage: 0
+};
 
 function getData(url) {
   ajax.open('GET', url, false); // 동기적으로 처리하겠다.
@@ -133,43 +137,41 @@ function getData(url) {
 
 function newsDetail() {
   // 브라우저가 제공하는 location 
-  var id = location.hash.substring(1);
+  var id = location.hash.substring(7);
   var newsContent = getData(CONTENT_URL.replace('@id', id));
   var title = document.createElement('h1');
-  container.innerHTML = "\n    <h1>".concat(newsContent.title, "</h1>\n    <div><a href=\"\">\uBAA9\uB85D\uC73C\uB85C</a></div>\n    ");
+  container.innerHTML = "\n    <h1>".concat(newsContent.title, "</h1>\n    <div><a href=\"#/page/").concat(store.currentPage, "\">\uBAA9\uB85D\uC73C\uB85C</a></div>\n    ");
 }
 
 function newsFeed() {
   // JSON -> Object  
   var newsFeed = getData(NEWS_URL);
   var newsList = [];
+  store.totalPage = newsFeed.length / 10;
   newsList.push('<ul>');
 
-  for (var i = 0; i < 10; i++) {
-    var div = document.createElement('div');
-    var li = document.createElement('li');
-    var a = document.createElement('a');
-    newsList.push("\n        <li><a href=\"#".concat(newsFeed[i].id, "\">").concat(newsFeed[i].title, " (").concat(newsFeed[i].comments_count, ")</a></li>\n        ")); // ul 자식들을 포함하는 방법
+  for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
+    newsList.push("\n        <li>\n            <a href=\"#/show/".concat(newsFeed[i].id, "\">\n               ").concat(newsFeed[i].title, " (").concat(newsFeed[i].comments_count, ")\n            </a>\n        </li> \n        ")); // ul 자식들을 포함하는 방법
     //ul.appendChild(div.children[0]);
     //ul.appendChild(div.firstElementChild);
   }
 
-  newsList.push('</ul>'); // 배열에 있는 요소를 문자열로 합쳐줌.
+  newsList.push('</ul>');
+  newsList.push("\n        <div>\n            <a href=\"#/page/".concat(store.currentPage > 1 ? store.currentPage - 1 : store.currentPage, "\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n            <a href=\"#/page/").concat(store.currentPage < store.totalPage ? store.currentPage + 1 : store.currentPage, "\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n        </div>\n    ")); // 배열에 있는 요소를 문자열로 합쳐줌.
 
   container.innerHTML = newsList.join('');
 } // 백틱 : 문자열로 만들 수 있음
 // 브라킷 대괄호
 // 브레이스 {} 중괄호
-//document.getElementById('root').appendChild(ul);
-//document.getElementById('root').appendChild(content);
-//container.appendChild(ul);
-//container.appendChild(content);
 
 
 function router() {
   var routePath = location.hash;
 
   if (routePath === '') {
+    newsFeed();
+  } else if (routePath.indexOf('#/page/') >= 0) {
+    store.currentPage = Number(routePath.substr(7));
     newsFeed();
   } else {
     newsDetail();
@@ -178,8 +180,8 @@ function router() {
 
 router(); // 해시 내용이 변경될 때 발생
 
-window.addEventListener('hashchange', newsDetail);
-},{}],"../../.npm-global/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+window.addEventListener('hashchange', router);
+},{}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -207,7 +209,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49820" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49702" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -383,5 +385,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../.npm-global/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","app.js"], null)
+},{}]},{},["../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","app.js"], null)
 //# sourceMappingURL=/app.c328ef1a.js.map
