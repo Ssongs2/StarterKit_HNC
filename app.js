@@ -1,7 +1,5 @@
-// let ajax = new XMLHttpRequest(); // 변수
 const container = document.getElementById('root');
 const ajax = new XMLHttpRequest(); //상수
-const content = document.createElement('div');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json'
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json"
 
@@ -13,52 +11,55 @@ function getData(url){
     return JSON.parse(ajax.response);
 }
 
-// JSON -> Object  
-const newsFeed = getData(NEWS_URL);
-const ul = document.createElement('ul');
-
-// 해시 내용이 변경될 때 발생
-window.addEventListener('hashchange', function(){
-    //console.log ('해시가 변경 됨.');
-    //console.log(location.hash);
-    // location
+function newsDetail(){
+    // 브라우저가 제공하는 location 
     const id = location.hash.substring(1);
 
     const newsContent = getData(CONTENT_URL.replace('@id', id));
     const title = document.createElement('h1');
 
-    title.innerHTML = newsContent.title;
-    newsContent.title;
-    
-    content.appendChild(title);
-    console.log(newsContent);
-})
-
-for (let i = 0; i < 10; i++) {
-    const div = document.createElement('div');
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-
-    div.innerHTML = 
-    `
-    <li><a href="#${newsFeed[i].id}">${newsFeed[i].title} (${newsFeed[i].comments_count }</a></li>
+    container.innerHTML = `
+    <h1>${newsContent.title}</h1>
+    <div><a href="">목록으로</a></div>
     `;
+}
 
-    //a.addEventListener('click', function(){});
+function newsFeed() {
+    // JSON -> Object  
+    const newsFeed = getData(NEWS_URL);
+    const newsList = [];
 
-    // a.href = `#${newsFeed[i].id}`;
-    // a.innerHTML = `${newsFeed[i].title} (${newsFeed[i].comments_count })`;
-    //li.appendChild(a)
-
-    //ul.appendChild(div.children[0]);
-    ul.appendChild(div.firstElementChild);
+    newsList.push('<ul>');
+    for (let i = 0; i < 10; i++) {
+        newsList.push(
+        `
+        <li><a href="#${newsFeed[i].id}">${newsFeed[i].title} (${newsFeed[i].comments_count })</a></li>
+        `
+        );
+        // ul 자식들을 포함하는 방법
+        //ul.appendChild(div.children[0]);
+        //ul.appendChild(div.firstElementChild);
+    }
+    newsList.push('</ul>');
+    // 배열에 있는 요소를 문자열로 합쳐줌.
+    container.innerHTML = newsList.join('')
 }
 
 // 백틱 : 문자열로 만들 수 있음
 // 브라킷 대괄호
 // 브레이스 {} 중괄호
-//document.getElementById('root').appendChild(ul);
-//document.getElementById('root').appendChild(content);
+function router() {
+    const routePath = location.hash;
 
-container.appendChild(ul);
-container.appendChild(content);
+    if(routePath === ''){
+        
+    newsFeed();
+    } else{
+        newsDetail();
+    }
+}
+
+router();
+
+// 해시 내용이 변경될 때 발생
+window.addEventListener('hashchange', newsDetail);
