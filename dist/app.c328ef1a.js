@@ -122,7 +122,9 @@ var container = document.getElementById('root');
 var ajax = new XMLHttpRequest(); //상수
 
 var NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
-var CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
+var CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json"; // x: 폭 m: magin
+
+var template = "\n    <div class=\"container mx-auto p-4\">\n        <h1>Hacker News</h1>\n        <ul>\n        {{__news_feed__}}\n            <li>\n                <a></a>\n            </li>\n        </ul>\n    <div>\n    <a href=\"#/page>{{__prev_page__}}\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n    <a href=\"#/page/{{__next_page__}}\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n    </div>\n</div>\n    ";
 var store = {
   currentPage: 1,
   totalPage: 0
@@ -148,7 +150,6 @@ function newsFeed() {
   var newsFeed = getData(NEWS_URL);
   var newsList = [];
   store.totalPage = newsFeed.length / 10;
-  newsList.push('<ul>');
 
   for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push("\n        <li>\n            <a href=\"#/show/".concat(newsFeed[i].id, "\">\n               ").concat(newsFeed[i].title, " (").concat(newsFeed[i].comments_count, ")\n            </a>\n        </li> \n        ")); // ul 자식들을 포함하는 방법
@@ -156,10 +157,11 @@ function newsFeed() {
     //ul.appendChild(div.firstElementChild);
   }
 
-  newsList.push('</ul>');
-  newsList.push("\n        <div>\n            <a href=\"#/page/".concat(store.currentPage > 1 ? store.currentPage - 1 : store.currentPage, "\">\uC774\uC804 \uD398\uC774\uC9C0</a>\n            <a href=\"#/page/").concat(store.currentPage < store.totalPage ? store.currentPage + 1 : store.currentPage, "\">\uB2E4\uC74C \uD398\uC774\uC9C0</a>\n        </div>\n    ")); // 배열에 있는 요소를 문자열로 합쳐줌.
+  template = template.replace('{{__news_feed__}}', newsList.join(''));
+  template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage + 1 : store.currentPage);
+  template = template.replace('{{__next_page__}}', store.currentPage + 1); // 배열에 있는 요소를 문자열로 합쳐줌.
 
-  container.innerHTML = newsList.join('');
+  container.innerHTML = template;
 } // 백틱 : 문자열로 만들 수 있음
 // 브라킷 대괄호
 // 브레이스 {} 중괄호
@@ -209,7 +211,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49702" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49670" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
