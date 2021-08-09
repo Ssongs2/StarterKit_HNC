@@ -3,43 +3,20 @@ const ajax = new XMLHttpRequest(); //상수
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json'
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json"
 // x: 폭 m: magin
-let template = `
-    <div class="bg-gray-600 min-h-screen">
-    <div class="bg-white text-xl">
-      <div class="mx-auto px-4">
-        <div class="flex justify-between items-center py-6">
-          <div class="flex justify-start">
-            <h1 class="font-extrabold">Hacker News</h1>
-          </div>
-          <div class="items-center justify-end">
-            <a href="#/page/{{__prev_page__}}" class="text-gray-500">
-              Previous
-            </a>
-            <a href="#/page/{{__next_page__}}" class="text-gray-500 ml-4">
-              Next
-            </a>
-          </div>
-        </div> 
-      </div>
-    </div>
-    <div class="p-4 text-2xl text-gray-700">
-      {{__news_feed__}}        
-    </div>
-    </div>
-        `
 
 const store = {
   currentPage: 1,
   totalPage: 0,
+  feeds: [],
 };
 
 function getData(url) {
-
   ajax.open('GET', url, false); // 동기적으로 처리하겠다.
   ajax.send();
 
   return JSON.parse(ajax.response);
 }
+
 function newsDetail() {
   // 브라우저가 제공하는 location 
   const id = location.hash.substring(7);
@@ -76,11 +53,18 @@ function newsDetail() {
     </div>
     `
 
-    function makeComment(comments, called=0){
-      const commentString = [];
+    for(let i=0; i<store.feeds.length; i++){
+      if(store.feeds[i].id === Number(id)){
+        store.feeds[i].read = true;
+        break;
+      }
+    }
 
-      for(let i=0; i < comments.length; i++) {
-        commentString.push(`
+  function makeComment(comments, called = 0) {
+    const commentString = [];
+
+    for (let i = 0; i < comments.length; i++) {
+      commentString.push(`
         <div style="padding-left: ${called * 40}px;" class="mt-4">
         <div class="text-gray-400">
           <i class="fa fa-sort-up mr-2"></i>
@@ -90,20 +74,54 @@ function newsDetail() {
       </div>  
         `);
 
-        if(comments[i].comments.length > 0){
-          commentString.push(makeComment(comments[i].comments, called+1));
-        }
+      if (comments[i].comments.length > 0) {
+        commentString.push(makeComment(comments[i].comments, called + 1));
       }
-      return commentString.join('');
     }
+    return commentString.join('');
+  }
   container.innerHTML = template.replace('{{__comments__}}', makeComment(newsContent.comments));
+}
+
+function makeFeed(feeds){
+  for(let i=0; i< feeds.length; i++){
+    feeds[i].read = false
+  }
+
+  return feeds;
 }
 
 function newsFeed() {
   // JSON -> Object  
-  const newsFeed = getData(NEWS_URL);
-  const newsList = [];
+  let newsFeed = store.feeds;
+  let newsList = [];
+  let template = `
+  <div class="bg-gray-600 min-h-screen">
+    <div class="bg-white text-xl">
+      <div class="mx-auto px-4">
+        <div class="flex justify-between items-center py-6">
+          <div class="flex justify-start">
+            <h1 class="font-extrabold">Hacker News</h1>
+          </div>
+          <div class="items-center justify-end">
+            <a href="#/page/{{__prev_page__}}" class="text-gray-500">
+              Previous
+            </a>
+            <a href="#/page/{{__next_page__}}" class="text-gray-500 ml-4">
+              Next
+            </a>
+          </div>
+        </div> 
+      </div>
+    </div>
+    <div class="p-4 text-2xl text-gray-700">
+      {{__news_feed__}}        
+    </div>
+  </div>`;
 
+  if(newsFeed.length === 0){
+    newsFeed = store.feeds = makeFeed(getData(NEWS_URL));
+  }
   store.totalPage = newsFeed.length / 10;
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
@@ -126,13 +144,11 @@ function newsFeed() {
               </div>  
             </div>
             </div>
-        `
-    );
+        `);
     // ul 자식들을 포함하는 방법
     //ul.appendChild(div.children[0]);
     //ul.appendChild(div.firstElementChild);
   }
-
   template = template.replace('{{__news_feed__}}', newsList.join(''));
   template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage + 1 : store.currentPage);
   template = template.replace('{{__next_page__}}', store.currentPage + 1);
@@ -154,7 +170,6 @@ function router() {
     newsDetail();
   }
 }
-
 router();
 
 // 해시 내용이 변경될 때 발생
