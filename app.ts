@@ -1,36 +1,36 @@
 // 변수명 - 소문자로 시작하는 카멜케이스
 // 타이핑하는 식별자 - 대문자로 시작하는 카멜케이스
-type Store = {
+interface Store {
   currentPage: number;
   totalPage: number;
   feeds: NewsFeed[]; // newsFeed유형의 데이터가 들어가는 배열
 }
 
-type News = {
+interface News {
 
-  id: number;
-  time_ago: string;
-  title: string;
-  url: string;
-  user: string;
-  content: string;
+  readonly id: number;
+  readonly time_ago: string;
+  readonly title: string;
+  readonly url: string;
+  readonly user: string;
+  readonly content: string;
 
 }
 
 // 인터섹션 - 타입 알리아스의 기능
-type NewsFeed = News & {
-  comments_count: number;
-  points: number;
+interface NewsFeed  extends News {
+  readonly comments_count: number;
+  readonly points: number;
   read?: boolean; // 있을 때도 있고 없을 때도 있고
 }
 
-type NewsDetail = News & {
-  comments: NewsComment[];
+interface NewsDetail extends News {
+  readonly comments: NewsComment[];
 }
 
-type NewsComment = News & {
-  comments: NewsComment[];
-  level: number;
+interface NewsComment extends News {
+  readonly comments: NewsComment[];
+  readonly level: number;
 }
 
 const container: HTMLElement | null = document.getElementById('root');
@@ -46,19 +46,52 @@ const store: Store = {
   feeds: [],
 };
 
-//호출하는 쪽에서 반환 유형을 지정해주면 그대로 반환
-function getData<AjaxResponse>(url: string): AjaxResponse {
-  ajax.open('GET', url, false); // 동기적으로 처리하겠다.
-  ajax.send();
-
-  return JSON.parse(ajax.response);
+class Api {
+  getRequest<AjaxResponse>(url: string): AjaxResponse {
+    const ajax =new XMLHttpRequest();
+    ajax.open('GET', url, false); // 동기적으로 처리하겠다.
+    ajax.send();
+  
+    return JSON.parse(ajax.response);
+  }
 }
+// 의사코드 : 전체적으로 흐름만 알기 위해서 문법도 신경쓰지 않고 코딩하는 것
+// javascript 믹스인 
+// 믹스드인을 쓰는 이유
+// 1. 다중 상속 불가
+// 2. 엮는 관계를 코드로 명시해 줘야 함.
+function applyApiMixins(targetClass: any, baseClass: any[]): void{
+  baseClass.forEach(baseClass => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach(name => {
+      const descriptor = Object.getOwnPropertyDescriptor(baseClass.prototype, name);
+      
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }            
+    });
+  });
+}
+class NewsFeedApi {
+  getData(): NewsFeed[]{
+    return this.getRequest<NewsFeed[]>(NEWS_URL);
+  }
+}
+
+class NewsDetailApi {
+  getData(id: string): NewsDetail {
+    return this.getRequest<NewsDetail>(CONTENT_URL.replace('@id', id));
+
+  }
+}
+applyApiMixins(NewsFeedApi, [Api]);
+applyApiMixins(NewsDetailApi, [Api]);
 
 function newsDetail(): void {
   // 브라우저가 제공하는 location 
   const id = location.hash.substring(7);
+  const api = new NewsDetailApi();
 
-  const newsContent = getData<NewsDetail>(CONTENT_URL.replace('@id', id));
+  const newsContent : NewsDetail = api.getData(id);
   const title = document.createElement('h1');
 
   let template = `
@@ -133,6 +166,7 @@ function makeFeed(feeds: NewsFeed[]): NewsFeed[] {
 }
 
 function newsFeed(): void {
+  const api = new NewsFeedApi();
   // JSON -> Object  
   let newsFeed = store.feeds;
   let newsList = [];
@@ -161,7 +195,7 @@ function newsFeed(): void {
   </div>`;
 
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeed(getData<NewsFeed[]>(NEWS_URL));
+    newsFeed = store.feeds = makeFeed(api.getData());
   }
   store.totalPage = newsFeed.length / 10;
 
