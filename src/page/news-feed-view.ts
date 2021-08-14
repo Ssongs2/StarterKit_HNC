@@ -1,6 +1,6 @@
 import View from '../core/view';
 import { NewsFeedApi } from '../core/api';
-import { NewsFeed } from '../types'
+import { NewsFeed, NewsStore } from '../types'
 import { NEWS_URL } from '../config'
 
 let template = `
@@ -30,30 +30,30 @@ let template = `
 
 // class - 대문자로 시작하는 클래스명 컨벤션
 export default class NewsFeedView extends View {
-    private api: NewsFeedApi;
-    private feeds: NewsFeed[];
-  
-    constructor(containerId: string) {
-     
-      // 상위 클래스로부터 extends 해주면 반드시 상위클래스의 생성자를 명시적으로 호출해줘야 함 **
-      super(containerId, template);
-      this.api = new NewsFeedApi(NEWS_URL);
-      // JSON -> Object  
-      this.feeds = window.store.feeds;
-  
-      if (this.feeds.length === 0) {
-        this.feeds = window.store.feeds = this.api.getData();      
-        this.makeFeed();
-      }
-      // window.store.totalPage = this.feeds.length / 10;
+  private api: NewsFeedApi;
+  private store: NewsStore;
+
+  constructor(containerId: string, store: NewsStore) {
+    // 상위 클래스로부터 extends 해주면 반드시 상위클래스의 생성자를 명시적으로 호출해줘야 함 **
+    super(containerId, template);
+    this.store = store;
+    this.api = new NewsFeedApi(NEWS_URL);
+    // JSON -> Object
+    // window.store.totalPage = this.feeds.length / 10;
+    
+  }
+
+  render = async (page: string = '1'): Promise<void> => {
+    this.store.currentPage = Number(page);
+    if (!this.store.hasFeeds) {
+      this.store.setFeeds(await this.api.getData());
     }
-  
-    render(): void {
-      //window.store.currentPage = Number(location.hash.substring(7) || 1);
-      for (let i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
-        const { id, title, comments_count, user, points, time_ago, read } = this.feeds[i];
-        this.addhtml(
-          `
+    // 타입추론: 타입스크립트 컴파일러가 타입을 유추할 수 있는 것 
+
+    for (let i = (this.store.currentPage - 1) * 10; i < this.store.currentPage * 10; i++) {
+      const { id, title, comments_count, user, points, time_ago, read } = this.store.getFeed(i);
+      this.addhtml(
+        `
                 <div class="p-6 ${read ? 'bg-red-500' : 'bg-white'} mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
                 <div class="flex">
                   <div class="flex-auto">
@@ -72,19 +72,11 @@ export default class NewsFeedView extends View {
                 </div>
                 </div>
             `);
-      }
-      this.setTemplateData('news_feed', this.gethtml());
-      this.setTemplateData('prev_page', String(window.store.currentPage > 1 ? window.store.currentPage + 1 : window.store.currentPage));
-      this.setTemplateData('next_page', String(window.store.currentPage + 1));
-  
-      this.updateView();
     }
-  
-    // 타입추론: 타입스크립트 컴파일러가 타입을 유추할 수 있는 것 
-    private makeFeed(): void {
-      for (let i = 0; i < this.feeds.length; i++) {
-        this.feeds[i].read = false
-      }
-    }
+    this.setTemplateData('news_feed', this.gethtml());
+    this.setTemplateData('prev_page', String(this.store.prevPage));
+    this.setTemplateData('next_page', String(this.store.nextPage));
+
+    this.updateView();
   }
-  
+}

@@ -6,36 +6,43 @@ export default class Router {
     defaultRoute: RouteInfo | null;
   
     constructor() {
-  
       // 해시 내용이 변경될 때 발생
       window.addEventListener('hashchange', this.route.bind(this));
       // this.route -> 브라우저 이벤트 시스템이 호출
       // this가 해당 메소드의 것을 알려줘야 해.
   
-      this.routeTable = [];
       this.defaultRoute = null;
+      this.routeTable = [];
+    }
+
+    setDefaultPage(page: View, params: RegExp | null = null): void {
+      this.defaultRoute = { path: '', page, params };
     }
   
-    setDefaultPage(page: View): void {
-      this.defaultRoute = { path: '', page };
-    }
-  
-    addRouterPath(path: string, page: View): void {
-      this.routeTable.push({ path, page });
+    addRouterPath(path: string, page: View, params: RegExp | null = null): void {
+      this.routeTable.push({ path, page, params });
     }
    
     route() {
-      const routePath = location.hash;
-  
+      const routePath:string = location.hash;
+
       if (routePath === '' && this.defaultRoute) {
-        this.defaultRoute.page.render()
+        this.defaultRoute.page.render();
+        return;
       }
   
-      for (const RouteInfo of this.routeTable) {
-        if (routePath.indexOf(RouteInfo.path) >= 0) {
-          RouteInfo.page.render();
-          break;
-        }
+      for(const routeInfo of this.routeTable) {
+        if (routePath.indexOf(routeInfo.path) >= 0) {      
+          if (routeInfo.params) {
+            const parseParams = routePath.match(routeInfo.params);
+            if (parseParams) {
+              routeInfo.page.render.apply(null, [parseParams[1]]); // page가 view type인데 왜 render를 붙여야하는 거지?
+            }          
+          } else {
+            routeInfo.page.render();
+          }       
+          return;
+        }  
       }
     }
   }

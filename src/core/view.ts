@@ -22,20 +22,25 @@ export default abstract class View {
       this.container.innerHTML = this.renderTemplate;
       this.renderTemplate = this.template;
     }
+
     protected addhtml(htmlString: string): void {
       this.htmlList.push(htmlString);
     }
+
     protected gethtml(): string {
       const snapshot = this.htmlList.join('');
       this.clearHtmlList();
       return snapshot;
     }
+
     protected setTemplateData(key: string, value: string): void {
       this.renderTemplate = this.renderTemplate.replace(`{{__${key}__}}`, value);
     }
+
     protected clearHtmlList(): void {
       this.htmlList = [];
     }
-    abstract render(): void; // 추상메소드 // 상속된 클래스에 한해 접근가능
+    
+    abstract render(...params: string[]): void; // 추상메소드 // 상속된 클래스에 한해 접근가능
   }
   
